@@ -5,12 +5,13 @@ description: |
   Learn how to use the font-display API to make sure your web page text
   will always be visible to your users.
 date: 2019-05-02
-updated: 2020-04-29
+updated: 2024-03-19
 ---
 
 Fonts are often large files with slow load times.
 Some browsers hide text until the font loads,
 causing a [flash of invisible text (FOIT)](https://web.dev/articles/avoid-invisible-text).
+This can increase FCP and LCP times, as well as cause layout shifts contributing to CLS.
 
 ## How the Lighthouse font-display audit fails
 
@@ -25,10 +26,15 @@ flags any font URLs that may flash invisible text:
 
 ## How to avoid showing invisible text
 
-The easiest way to avoid showing invisible text while custom fonts load
-is to temporarily show a system font.
-By including `font-display: swap` in your `@font-face` style,
-you can avoid FOIT in most modern browsers:
+The [`font-display` API](https://developer.mozilla.org/docs/Web/CSS/@font-face/font-display) indicates
+how a font is displayed when used inside a `font-face` style. The following
+`font-display` values will tell the browser to use a system font if the custom font is not ready:
+
+- `swap`
+- `optional`
+- `fallback`
+
+### CSS Example
 
 ```css
 @font-face {
@@ -42,23 +48,9 @@ you can avoid FOIT in most modern browsers:
 }
 ```
 
-The [font-display API](https://developer.mozilla.org/docs/Web/CSS/@font-face/font-display)
-specifies how a font is displayed.
-`swap` tells the browser that text using the font should be displayed immediately using a system font.
-Once the custom font is ready, it replaces the system font.
-(See the [Avoid invisible text during loading](https://web.dev/articles/avoid-invisible-text) post
-for more information.)
+### Google Fonts Example
 
-### Preload web fonts
-
-Use `<link rel="preload" as="font">` to fetch your font files earlier. Learn more:
-
-- [Preload web fonts to improve loading speed (codelab)](https://web.dev/articles/codelab-preload-web-fonts)
-- [Prevent layout shifting and flashes of invisibile text (FOIT) by preloading optional fonts](https://web.dev/articles/preload-optional-fonts)
-
-### Google Fonts
-
-Add the `&display=swap` [parameter](https://developer.mozilla.org/docs/Learn/Common_questions/What_is_a_URL#Basics_anatomy_of_a_URL) to the end of your Google Fonts URL:
+Add the `&display=swap`/`&display=optional`/`&display=fallback` [parameter](https://developer.mozilla.org/docs/Learn/Common_questions/What_is_a_URL#Basics_anatomy_of_a_URL) to the end of your Google Fonts URL:
 
 ```html
 <link
@@ -67,15 +59,14 @@ Add the `&display=swap` [parameter](https://developer.mozilla.org/docs/Learn/Com
 />
 ```
 
-## Browser support
+### How to avoid layout shifts caused by deferred fonts
 
-It's worth mentioning that not all major browsers support `font-display: swap`,
-so you may need to do a bit more work to fix the invisible text problem.
+Temporarily showing a system font will replace a FOIT with a flash of unstyled text (FOUT). This improves FCP&LCP by rendering content sooner,
+but FOIT and FOUT will both have the same impact on CLS when the custom font replaces the temporary system font.
 
-{% Aside 'codelab' %}
-Check out the [Avoid flash of invisible text codelab](https://web.dev/codelab-avoid-invisible-text)
-to learn how to avoid FOIT across all browsers.
-{% endAside %}
+The CLS impact of font loading can be mitigated using [preloads in conjunction with `font-display: optional`](https://web.dev/articles/preload-optional-fonts).
+However, overusing preloads can negatively impact load metrics. We recommend performing A/B testing to ensure that preloading fonts does not introduce any
+performance regressions.
 
 ## Stack-specific guidance
 
